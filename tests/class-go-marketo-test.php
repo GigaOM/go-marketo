@@ -5,6 +5,10 @@
 
 require_once dirname( __DIR__ ) . '/go-marketo.php';
 
+/**
+ * Our tests depend on the real Marketo authentication info from the system
+ * config.
+ */
 class GO_Marketo_Test extends WP_UnitTestCase
 {
 	/**
@@ -13,7 +17,6 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	public function setUp()
 	{
 		parent::setUp();
-		remove_filter( 'go_config', array( go_config(), 'go_config_filter' ), 10, 2 );
 		add_filter( 'go_config', array( $this, 'go_config_filter' ), 10, 2 );
 	}//END setUp
 
@@ -24,17 +27,25 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	{
 		$this->assertTrue( function_exists( 'go_marketo' ) );
 		$this->assertTrue( is_object( go_marketo() ) );
+		$config = go_marketo()->config();
+		$this->assertFalse( empty( $config ) );
 	}//END test_singleton
 
+	public function test_get_auth_token()
+	{
+		$token = go_marketo()->api()->get_auth_token();
+		$this->assertFalse( empty( $token ) );
+	}//END test_get_auth_token
+
 	/**
-	 * return custom config data for our tests
+	 * customize the system config file for our tests
 	 */
 	public function go_config_filter( $config, $which )
 	{
 		if ( 'go-marketo' == $which )
 		{
-			$config = array(
-			);
+///			$config = array(
+//			);
 		}//END if
 
 		return $config;

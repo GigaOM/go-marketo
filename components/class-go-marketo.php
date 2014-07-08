@@ -8,6 +8,7 @@ class GO_Marketo
 {
 	private $meta_key_base = 'go_marketo';
 	private $config = NULL;
+	private $api = NULL;
 
 	/**
 	 * constructor method for the GO_Marketo class
@@ -54,6 +55,22 @@ class GO_Marketo
 	public function admin_init()
 	{
 	}//END admin_init
+
+	/**
+	 * @return GO_Marketo_API a GO_Marketo_API object
+	 */
+	public function api()
+	{
+		if ( $this->api )
+		{
+			return $this->api;
+		}
+
+		require_once __DIR__ . '/class-go-marketo-api.php';
+		$this->api = new GO_Marketo_API( $this->config( 'client_id' ), $this->config( 'client_secret' ) );
+
+		return $this->api;
+	}//END api
 
 	/**
 	 * @param string $suffix (optional) what to append to the plugin's
