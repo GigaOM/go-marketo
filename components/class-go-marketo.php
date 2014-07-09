@@ -143,6 +143,37 @@ class GO_Marketo
 	 */
 	public function go_syncuser_user( $user_id, $action )
 	{
+		$user = get_user_by( 'id', $user_id );
+		if ( empty( $user ) )
+		{
+			return; // invalid user idcr
+		}
+
+		$lead_info = array(
+			'wpid' => $user_id,
+			'email' => $user->user_email,
+		);
+
+		// check if we have a Marketo id for the user
+		$meta = get_user_meta( $user_id, $this->meta_key(), TRUE );
+		if ( ! empty( $meta['marketo_id'] ) )
+		{
+			$lead_info['id'] = $meta['marketo_id'];
+		}
+
+		// unsubscribe the user from Marketo if this is a deletion
+		if ( 'delete' == $action )
+		{
+			$lead_info['unsubscribed'] = TRUE;
+			$lead_info['unsubscribedReason'] = 'WP user deletion';
+		}
+
+		$response = $this->api()->update_lead( $lead_info );
+
+		if ( ! is_wp_error( $response ) ) // save the Marketo id
+		{
+			update_user_meta( $user_id, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
+		}
 	}//END go_syncuser_user
 }//END class
 
