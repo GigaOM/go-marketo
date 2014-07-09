@@ -45,7 +45,7 @@ class GO_Marketo_API
 		}
 
 		$response = wp_remote_get(
-			go_marketo()->config( 'identity_url' ) . '/oauth/token?grant_type=client_credentials&client_id=' . $this->client_id . '&client_secret=' . $this->client_secret
+			go_marketo()->config( 'endpoint' ) . '/identity/oauth/token?grant_type=client_credentials&client_id=' . $this->client_id . '&client_secret=' . $this->client_secret
 		);
 
 		if ( 200 != $response['response']['code'] )
@@ -72,9 +72,9 @@ class GO_Marketo_API
 	 */
 	public function get_lead_by_id( $id )
 	{
-		$url = go_marketo()->config( 'endpoint_url' ) . '/v1/lead/' . absint( $id ) . '.json';
+		$url = go_marketo()->config( 'endpoint' ) . '/rest/v1/lead/' . absint( $id ) . '.json';
 
-		$results = $this->marketo_rest_get( $url );
+		$results = $this->marketo_rest_http( $url );
 
 		if ( 0 < count( $results ) )
 		{
@@ -105,7 +105,7 @@ class GO_Marketo_API
 			$filter_values = urlencode( $filter_values );
 		}
 
-		$url = go_marketo()->config( 'endpoint_url' ) . '/v1/leads.json?filterType=' . urlencode( $filter_type ) . '&filterValues=' . $filter_values;
+		$url = go_marketo()->config( 'endpoint' ) . '/rest/v1/leads.json?filterType=' . urlencode( $filter_type ) . '&filterValues=' . $filter_values;
 
 		if ( ! empty( $fields ) )
 		{
@@ -113,33 +113,96 @@ class GO_Marketo_API
 			$url .= '&fields=' . sanitize_text_field( $fields );
 		}
 
-		return $this->marketo_rest_get( $url );
+		return $this->marketo_rest_http( $url );
 	}//END get_leads
+
+	/**
+	 * update a single lead. if the lead does not exist by email or
+	 * by wpid, then it will be created in Marketo.
+	 *
+	 * @param array $lead list of attributes for this lead. it must contain
+	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
+	 *  the fields are data on the lead that we want to sync to Marketo.
+	 * @return mixed the Marketo id of the updated or created lead if the
+	 *  update was successful, or WP_Error if we got an error.
+	 */
+	public function update_lead( $lead )
+	{
+		if ( empty( $lead['email'] ) && empty( $lead['id'] ) )
+		{
+			return new WP_Error( 'missing_field', 'Missing both "email" and "id" fields' );
+		}
+
+		// build our post param
+		$post_data = new stdClass;
+		$post_data->action = 'createOrUpdate';
+		$post_data->lookupField = empty( $lead['id'] ) ? 'email' : 'id';
+		$post_data->input = array( $lead );
+
+		$response = $this->marketo_rest_http(
+			go_marketo()->config( 'endpoint' ) . '/rest/v1/leads.json',
+			'POST',
+			$post_data
+		);
+
+		if ( is_wp_error( $response ) )
+		{
+			return $response;
+		}
+
+		if ( ! empty( $response[0]->errors ) )
+		{
+			return new WP_Error( $response[0]->errors[0]->code, $response[0]->errors[0]->message, $response );
+		}
+
+		return $response[0]->id;
+	}//END update_lead
 
 	/**
 	 * make an HTTP GET request to Marketo's RESET API. Mainly we add the
 	 * authorization token to the HTTP header.
 	 *
-	 * @param $url string the url to request, query vars included.
-	 * @return array results from the HTTP GET request. NULL if we encountered
-	 *  an HTTP error
+	 * @param string $url the url to request, query vars included.
+	 * @param string $method (optional) GET or POST. default is GET
+	 * @param object $body (optional) used for POST and will be converted
+	 *  to JSON
+	 * @return array results from the HTTP GET request. or WP_Error if we
+	 *  encountered an HTTP error
 	 */
-	private function marketo_rest_get( $url )
+	private function marketo_rest_http( $url, $method = 'GET', $body = NULL )
 	{
-		$response = wp_remote_get(
-			$url,
-			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $this->get_auth_token(),
-				),
+		// add the auth header
+		$args = array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $this->get_auth_token(),
 			)
 		);
 
-		if ( 200 != $response['response']['code'] )
+		if ( 'POST' == $method )
 		{
-			return NULL;
+			$args['method'] = 'POST';
+			if ( ! empty( $body ) )
+			{
+				$args['body'] = json_encode( $body );
+				$args['headers']['Content-type'] = 'application/json';
+			}
+			$response = wp_remote_post( $url, $args );
+		}//END if
+		else
+		{
+			$response = wp_remote_get( $url, $args );
 		}
 
+		if ( is_wp_error( $response ) )
+		{
+			return $response;
+		}
+
+		if ( 200 != $response['response']['code'] )
+		{
+			return new WP_Erorr( 'http_error', 'Marketo API returned HTTP ' . $response['response']['code'], $response);
+		}
+		
 		return json_decode( $response['body'] )->result;
 	}//END marketo_rest_get
 }//END class

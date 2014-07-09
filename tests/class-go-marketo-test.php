@@ -73,4 +73,53 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		$this->assertEquals( 26059509, $leads[0]->id );
 		$this->assertEquals( 137141, $leads[0]->wpid );
 	}//END test_get_leads
+
+	/**
+	 * test GO_Marketo_API's update_lead() function
+	 */
+	public function test_update_lead()
+	{
+		// test the error condition
+		$result = go_marketo()->api()->update_lead( array() );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( 'missing_field', $result->get_error_code() );
+
+		// try to update/create an actual lead
+		$leads = go_marketo()->api()->get_leads(
+			'Email',
+			array( 'will.luo+test2@gigaom.com' ),
+			array( 'firstName', 'lastName', 'email', 'wpid', 'marketoEventEmails', 'marketoResearchEmails', 'wpname' ) );
+		$this->assertEquals( 1, count( $leads ) );
+		$this->assertEquals( 'will.luo+test2@gigaom.com', $leads[0]->email );
+		$the_lead = $leads[0];
+
+		
+		$result = go_marketo()->api()->update_lead(
+			array(
+				'id' => $the_lead->id,
+				'email' => 'will.luo+test2@gigaom.com',
+				'wpname' => 'WL 2014',
+			)
+		);
+		$this->assertFalse( is_wp_error( $result ) );
+		$this->assertEquals( $the_lead->id, $result );
+
+		$leads = go_marketo()->api()->get_leads(
+			'ID',
+			array( $the_lead->id ),
+			array( 'firstName', 'lastName', 'email', 'wpid', 'marketoEventEmails', 'marketoResearchEmails', 'wpname' )
+		);
+		$this->assertEquals( 1, count( $leads ) );
+		$this->assertEquals( 'WL 2014', $leads[0]->wpname );
+
+		// empty wpname for later tests
+		$result = go_marketo()->api()->update_lead(
+			array(
+				'id' => $the_lead->id,
+				'wpname' => '',
+			)
+		);
+		$this->assertFalse( is_wp_error( $result ) );
+		$this->assertEquals( $the_lead->id, $result );		
+	}//END test_update_lead
 }// END class
