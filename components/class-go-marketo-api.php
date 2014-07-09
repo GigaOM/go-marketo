@@ -200,9 +200,9 @@ class GO_Marketo_API
 
 		if ( 200 != $response['response']['code'] )
 		{
-			return new WP_Erorr( 'http_error', 'Marketo API returned HTTP ' . $response['response']['code'], $response);
+			return new WP_Erorr( 'http_error', 'Marketo API returned HTTP ' . $response['response']['code'], $response );
 		}
-		
+
 		return json_decode( $response['body'] )->result;
-	}//END marketo_rest_get
+	}//END marketo_rest_http
 }//END class

@@ -93,7 +93,6 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		$this->assertEquals( 'will.luo+test2@gigaom.com', $leads[0]->email );
 		$the_lead = $leads[0];
 
-		
 		$result = go_marketo()->api()->update_lead(
 			array(
 				'id' => $the_lead->id,
@@ -120,6 +119,6 @@ class GO_Marketo_Test extends WP_UnitTestCase
 			)
 		);
 		$this->assertFalse( is_wp_error( $result ) );
-		$this->assertEquals( $the_lead->id, $result );		
+		$this->assertEquals( $the_lead->id, $result );
 	}//END test_update_lead
 }// END class
