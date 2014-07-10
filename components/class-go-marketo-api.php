@@ -155,6 +155,12 @@ class GO_Marketo_API
 			return new WP_Error( $response[0]->errors[0]->code, $response[0]->errors[0]->message, $response );
 		}
 
+		// something went wrong
+		if ( ! isset( $response[0]->id ) )
+		{
+			return new WP_Error( $response[0]->status, 'createOrUpdate failed', $response );
+		}
+
 		return $response[0]->id;
 	}//END update_lead
 
