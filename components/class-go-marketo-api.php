@@ -48,7 +48,7 @@ class GO_Marketo_API
 			go_marketo()->config( 'endpoint' ) . '/identity/oauth/token?grant_type=client_credentials&client_id=' . $this->client_id . '&client_secret=' . $this->client_secret
 		);
 
-		if ( 200 != $response['response']['code'] )
+		if ( is_wp_error( $response ) || 200 != $response['response']['code'] )
 		{
 			return NULL;
 		}

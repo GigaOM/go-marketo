@@ -139,23 +139,36 @@ class GO_Marketo
 	 *
 	 * @param int $user_id ID of the user who triggered an event
 	 * @param string $action the type action triggered. we're only
-	 *  processing 'update' and 'delete'.
+	 *  processing 'add', 'update' and 'delete'.
 	 */
 	public function go_syncuser_user( $user_id, $action )
 	{
 		$user = get_user_by( 'id', $user_id );
 		if ( empty( $user ) )
 		{
-			return; // invalid user idcr
+			return; // invalid user id
 		}
 
+		$this->sync_user( $user, $action );
+	}//END go_syncuser_user
+
+	/**
+	 * this callback gets invoked when events configured in go-syncuser
+	 * are fired.
+	 *
+	 * @param WP_User $user the user who's going to be sync'ed to Marketo
+	 * @param string $action the type action triggered. we're only
+	 *  processing 'add', 'update' and 'delete'.
+	 */
+	public function sync_user( $user, $action )
+	{
 		$lead_info = array(
-			'wpid' => $user_id,
+			'wpid' => $user->ID,
 			'email' => $user->user_email,
 		);
 
 		// check if we have a Marketo id for the user
-		$meta = get_user_meta( $user_id, $this->meta_key(), TRUE );
+		$meta = get_user_meta( $user->ID, $this->meta_key(), TRUE );
 		if ( ! empty( $meta['marketo_id'] ) )
 		{
 			$lead_info['id'] = $meta['marketo_id'];
@@ -168,6 +181,9 @@ class GO_Marketo
 			$lead_info['unsubscribedReason'] = 'WP user deletion';
 		}
 
+		// collect all other lead info
+		$lead_info = array_merge( $this->get_sync_fields( $user ), $lead_info );
+
 		$response = $this->api()->update_lead( $lead_info );
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
@@ -175,6 +191,29 @@ class GO_Marketo
 			update_user_meta( $user_id, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
 		}
 	}//END go_syncuser_user
+
+	/**
+	 * Collect data fields associated with $user to be sync'ed to Marketo
+	 *
+	 * @param WP_User $user the user who's going to be sync'ed to Marketo
+	 */
+	public function get_sync_fields( $user )
+	{
+		$results = array();
+
+		$field_map = $this->config( 'field_map' );
+		if ( empty( $field_map ) )
+		{
+			return $results;
+		}
+
+		foreach ( $field_map as $field_name => $field_config )
+		{
+			$results[ $field_name ] = go_syncuser_map()->map_field( $user, $field_config );
+		}//END foreach
+
+		return $results;
+	}//END get_sync_fields
 }//END class
 
 /**
