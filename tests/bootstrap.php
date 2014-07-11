@@ -18,6 +18,9 @@ if ( file_exists( $bootstrap ) )
 		'active_plugins' => array(
 			'go-config/go-config.php',
 			'go-syncuser/go-syncuser.php',
+			'go-user-profile/go-user-profile.php',
+			'go-newsletter-subscriptions/go-newsletter-subscriptions.php',
+			'go-bizo/go-bizo.php',
 		),
 		'template' => 'vip/gigaom4-parent',
 		'stylesheet' => 'vip/gigaom4-child',
