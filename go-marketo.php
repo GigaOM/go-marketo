@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Gigaom Marketo Synchronization Plugin
  * Plugin URI: http://gigaom.com/
- * Description: Custom plugin to to synchronize arbitrary data to Marketo
+ * Description: Custom plugin to synchronize arbitrary data to Marketo
  * Version: 0.1
  * Author: Gigaom <support@gigaom.com>
  * Author URI: http://gigaom.com/
