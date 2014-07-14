@@ -30,8 +30,6 @@ if ( file_exists( $bootstrap ) )
 
 	// make sure the go-config dir is set
 	update_option( 'go-config-dir', '_accounts' );
-
-//	require_once __DIR__ . '/class-go-mailchimp-test-abstract.php';
 }//END if
 else
 {
