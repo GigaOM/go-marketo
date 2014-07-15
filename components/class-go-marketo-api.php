@@ -76,6 +76,11 @@ class GO_Marketo_API
 
 		$results = $this->marketo_rest_http( $url );
 
+		if ( is_wp_error( $results ) )
+		{
+			return $results;
+		}
+
 		if ( 0 < count( $results ) )
 		{
 			return (array) $results[0]; // should just get one lead per Marketo id
@@ -93,6 +98,7 @@ class GO_Marketo_API
 	 * @param mixed $filter_values can be comma-separated string or an array,
 	 *  of the values of $type to filter for.
 	 * @param array $fields what fields to return for each lead
+	 * @return mixed Array of lead objects, or WP_Error if we encountered an error
 	 */
 	public function get_leads( $filter_type, $filter_values, $fields = array() )
 	{
@@ -163,6 +169,37 @@ class GO_Marketo_API
 
 		return $response[0]->id;
 	}//END update_lead
+
+	/**
+	 * Add a lead to a list
+	 *
+	 * @param string $list_id id of the list to add the lead to
+	 * @param string $lead_id id of the lead to add to the list
+	 * @return mixed the lead id if the add was successful, or WP_Error if not.
+	 */
+	public function add_lead_to_list( $list_id, $lead_id )
+	{
+		$url = go_marketo()->config( 'endpoint' ) . '/rest/v1/lists/' . $list_id . '/leads.json';
+
+		$input = new stdClass();
+		$input->input = array();
+		$input->input[0] = new stdClass();
+		$input->input[0]->id = $lead_id;
+
+		$response = $this->marketo_rest_http( $url, 'POST', $input );
+
+		if ( is_wp_error( $response ) )
+		{
+			return $response;
+		}
+
+		if ( 1 != count( $response ) || ! isset( $response[0]->id ) || 'added' != $response[0]->status )
+		{
+			return new WP_Error( 'list_add_error', 'Error adding lead ' . $lead_id . ' to list ' . $list_id, $response );
+		}
+
+		return $response[0]->id;
+	}//END add_lead_to_list
 
 	/**
 	 * make an HTTP GET request to Marketo's RESET API. Mainly we add the

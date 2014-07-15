@@ -189,7 +189,14 @@ class GO_Marketo
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
 			update_user_meta( $user_id, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
-		}
+
+			// and add the lead to The List
+			$the_list = $this->config( 'list' );
+			if ( ! empty( $the_list ) )
+			{
+				$this->api()->add_lead_to_list( $the_list['id'], $response );
+			}
+		}//END if
 	}//END go_syncuser_user
 
 	/**
