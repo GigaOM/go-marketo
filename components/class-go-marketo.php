@@ -197,7 +197,7 @@ class GO_Marketo
 				$this->api()->add_lead_to_list( $the_list['id'], $response );
 			}
 		}//END if
-	}//END go_syncuser_user
+	}//END sync_user
 
 	/**
 	 * Collect data fields associated with $user to be sync'ed to Marketo
