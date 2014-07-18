@@ -7,11 +7,13 @@ require_once dirname( __DIR__ ) . '/go-marketo.php';
 
 /**
  * Our tests depend on the real Marketo authentication info from the system
- * config.
+ * config, and the lead will.luo+test2@gigaom.com with a Marketo id of
+ * 85902141.
  */
 class GO_Marketo_Test extends WP_UnitTestCase
 {
-	private $lead_id = 85577555; // for will.luo+test2@gigaom.com on Marketo
+	private $lead_email = 'will.luo+test2@gigaom.com';
+	private $lead_id = 85902141;
 
 	/**
 	 * set up our test environment
@@ -46,15 +48,13 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	 */
 	public function test_get_lead_by_id()
 	{
-		// the id is for will.luo+test2@gigaom.com
-		// https://app-sjo.marketo.com/leadDatabase/loadLeadDetail?leadId=26059509
 		$lead = go_marketo()->api()->get_lead_by_id( $this->lead_id );
 
 		$this->assertFalse( is_wp_error( $lead ) );
 		$this->assertFalse( empty( $lead ) );
 		$this->assertTrue( 0 < count( $lead ) );
 		$this->assertEquals( $this->lead_id, $lead['id'] );
-		$this->assertEquals( 'will.luo+test2@gigaom.com', $lead['email'] );
+		$this->assertEquals( $this->lead_email, $lead['email'] );
 	}//END test_get_lead_by_id
 
 	/**
@@ -62,18 +62,18 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	 */
 	public function test_get_leads()
 	{
-		$leads = go_marketo()->api()->get_leads( 'Email', array( 'will.luo+test2@gigaom.com' ), array( 'firstName', 'lastName', 'email', 'wpid' ) );
+		$leads = go_marketo()->api()->get_leads( 'Email', array( $this->lead_email ), array( 'firstName', 'lastName', 'email', 'wpid' ) );
 
 		$this->assertFalse( is_wp_error( $leads ) );
 		$this->assertEquals( 1, count( $leads ) );
-		$this->assertEquals( 'will.luo+test2@gigaom.com', $leads[0]->email );
+		$this->assertEquals( $this->lead_email, $leads[0]->email );
 		$this->assertEquals( $this->lead_id, $leads[0]->id );
 		$this->assertEquals( 137141, $leads[0]->wpid );
 
 		$leads = go_marketo()->api()->get_leads( 'wpid', 137141, array( 'firstName', 'lastName', 'email', 'wpid' ) );
 
 		$this->assertEquals( 1, count( $leads ) );
-		$this->assertEquals( 'will.luo+test2@gigaom.com', $leads[0]->email );
+		$this->assertEquals( $this->lead_email, $leads[0]->email );
 		$this->assertEquals( $this->lead_id, $leads[0]->id );
 		$this->assertEquals( 137141, $leads[0]->wpid );
 	}//END test_get_leads
@@ -91,17 +91,17 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		// try to update/create an actual lead
 		$leads = go_marketo()->api()->get_leads(
 			'Email',
-			array( 'will.luo+test2@gigaom.com' ),
+			array( $this->lead_email ),
 			array( 'firstName', 'lastName', 'email', 'wpid', 'marketoEventEmails', 'marketoResearchEmails', 'wpname' ) );
 		$this->assertFalse( is_wp_error( $leads ) );
 		$this->assertEquals( 1, count( $leads ) );
-		$this->assertEquals( 'will.luo+test2@gigaom.com', $leads[0]->email );
+		$this->assertEquals( $this->lead_email, $leads[0]->email );
 		$the_lead = $leads[0];
 
 		$result = go_marketo()->api()->update_lead(
 			array(
 				'id' => $the_lead->id,
-				'email' => 'will.luo+test2@gigaom.com',
+				'email' => $this->lead_email,
 				'wpname' => 'WL 2014',
 			)
 		);
@@ -134,7 +134,7 @@ class GO_Marketo_Test extends WP_UnitTestCase
 
 		$leads = go_marketo()->api()->get_leads(
 			'Email',
-			array( 'will.luo+test2@gigaom.com' ),
+			array( $this->lead_email ),
 			array( 'email', 'wpid', 'go_newsletters' )
 		);
 
