@@ -6,9 +6,12 @@
  */
 class GO_Marketo
 {
+	public $version = '0.1';
+
 	private $meta_key_base = 'go_marketo';
 	private $config = NULL;
 	private $api = NULL;
+	private $admin = NULL;
 
 	/**
 	 * constructor method for the GO_Marketo class
@@ -38,23 +41,22 @@ class GO_Marketo
 			$this->log( 'Trying to register hooks without a valid config file.', __FUNCTION__ );
 		}
 
-		// Hooking admin_menu here because it's too late to do it in admin_init
 		if ( is_admin() )
 		{
-			add_action( 'admin_init', array( $this, 'admin_init' ) );
+			$this->admin();
 		}
 	}//END init
 
-	/**
-	 * admin_init
-	 *
-	 * Register all necessary aspects for the visual aspects of the plugin
-	 * to appear throughout the WP Dashboard specific to MailChimp
-	 * administration.
-	 */
-	public function admin_init()
+	public function admin()
 	{
-	}//END admin_init
+		if ( ! $this->admin )
+		{
+			require_once __DIR__ . '/class-go-marketo-admin.php';
+			$this->admin = new GO_Marketo_Admin( $this );
+		}
+
+		return $this->admin;
+	}//END admin
 
 	/**
 	 * @return GO_Marketo_API a GO_Marketo_API object
@@ -115,8 +117,8 @@ class GO_Marketo
 	}//END config
 
 	/**
-	 * hooked to the go_user_profile_do_not_email_updated action. 
-	 * when $do_not_email is FALSE we make sure to subscribe the user
+	 * hooked to the go_user_profile_do_not_email_updated action
+	 * we set the unsubscribed flag according to $do_not_email's value
 	 * and invoke a sync
 	 *
 	 * @param $user_id int the user id
@@ -124,13 +126,13 @@ class GO_Marketo
 	 */
 	public function do_not_email_updated( $user_id, $do_not_email )
 	{
-		// we can only act if $do_not_email is FALSE and we have a valid $user_id
-		if ( $do_not_email || 0 >= $user_id )
+		// we can only act if we have a valid $user_id
+		if ( 0 >= $user_id )
 		{
 			return;
 		}
 
-		$this->api()->subscribe( $user_id );
+		$this->go_syncuser_user( $user_id, $do_not_email ? 'unsubscribe' : 'update' );
 	}//END do_not_email_updated
 
 	/**
@@ -139,7 +141,7 @@ class GO_Marketo
 	 *
 	 * @param int $user_id ID of the user who triggered an event
 	 * @param string $action the type action triggered. we're only
-	 *  processing 'add', 'update' and 'delete'.
+	 *  processing 'add', 'update', 'delete' and 'unsubscribe'.
 	 */
 	public function go_syncuser_user( $user_id, $action )
 	{
@@ -158,7 +160,7 @@ class GO_Marketo
 	 *
 	 * @param WP_User $user the user who's going to be sync'ed to Marketo
 	 * @param string $action the type action triggered. we're only
-	 *  processing 'add', 'update' and 'delete'.
+	 *  processing 'add', 'update', 'delete' and 'unsubscribe'.
 	 */
 	public function sync_user( $user, $action )
 	{
@@ -175,10 +177,10 @@ class GO_Marketo
 		}
 
 		// unsubscribe the user from Marketo if this is a deletion
-		if ( 'delete' == $action )
+		if ( 'delete' == $action || 'unsubscribe' == $action )
 		{
 			$lead_info['unsubscribed'] = TRUE;
-			$lead_info['unsubscribedReason'] = 'WP user deletion';
+			$lead_info['unsubscribedReason'] = 'user unsubscribed';
 		}
 
 		// collect all other lead info
@@ -188,7 +190,7 @@ class GO_Marketo
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
-			update_user_meta( $user_id, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
+			update_user_meta( $user->ID, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
 
 			// and add the lead to The List
 			$the_list = $this->config( 'list' );
