@@ -146,6 +146,7 @@ class GO_Marketo
 	public function go_syncuser_user( $user_id, $action )
 	{
 		$user = get_user_by( 'id', $user_id );
+
 		if ( empty( $user ) )
 		{
 			return; // invalid user id
@@ -171,6 +172,7 @@ class GO_Marketo
 
 		// check if we have a Marketo id for the user
 		$meta = get_user_meta( $user->ID, $this->meta_key(), TRUE );
+
 		if ( ! empty( $meta['marketo_id'] ) )
 		{
 			$lead_info['id'] = $meta['marketo_id'];
@@ -194,6 +196,7 @@ class GO_Marketo
 
 			// and add the lead to The List
 			$the_list = $this->config( 'list' );
+
 			if ( ! empty( $the_list ) )
 			{
 				$this->api()->add_lead_to_list( $the_list['id'], $response );
@@ -211,6 +214,7 @@ class GO_Marketo
 		$results = array();
 
 		$field_map = $this->config( 'field_map' );
+
 		if ( empty( $field_map ) )
 		{
 			return $results;

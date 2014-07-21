@@ -202,7 +202,7 @@ class GO_Marketo_API
 	}//END add_lead_to_list
 
 	/**
-	 * make an HTTP GET request to Marketo's RESET API. Mainly we add the
+	 * make an HTTP request to Marketo's REST API. Mainly we add the
 	 * authorization token to the HTTP header.
 	 *
 	 * @param string $url the url to request, query vars included.
@@ -224,11 +224,13 @@ class GO_Marketo_API
 		if ( 'POST' == $method )
 		{
 			$args['method'] = 'POST';
+
 			if ( ! empty( $body ) )
 			{
 				$args['body'] = json_encode( $body );
 				$args['headers']['Content-type'] = 'application/json';
 			}
+
 			$response = wp_remote_post( $url, $args );
 		}//END if
 		else
