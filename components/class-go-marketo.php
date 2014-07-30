@@ -156,6 +156,23 @@ class GO_Marketo
 	}//END go_syncuser_user
 
 	/**
+	 * retrieve the marketo id from the user meta
+	 *
+	 * @param WP_User $user a WP_User object
+	 * @return the user's marketo id if it exists in our db, or NULL if not
+	 */
+	public function get_marketo_id( $user )
+	{
+		$meta = get_user_meta( $user->ID, $this->meta_key(), TRUE );
+		if ( ! empty( $meta['marketo_id'] ) )
+		{
+			return $meta['marketo_id'];
+		}
+
+		return NULL;
+	}//END get_marketo_id
+
+	/**
 	 * this callback gets invoked when events configured in go-syncuser
 	 * are fired.
 	 *
@@ -192,7 +209,10 @@ class GO_Marketo
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
+			// do not trigger a sync when we're updating data *from* Marketo
+			go_syncuser()->suspend_triggers( TRUE );
 			update_user_meta( $user->ID, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
+			go_syncuser()->suspend_triggers( FALSE );
 
 			// and add the lead to The List
 			$the_list = $this->config( 'list' );
@@ -220,8 +240,35 @@ class GO_Marketo
 			return $results;
 		}
 
+		$fields = array();
 		foreach ( $field_map as $field_name => $field_config )
 		{
+			$fields[] = $field_name;
+		}
+
+		// get the existing lead
+		if ( $marketo_id = $this->get_marketo_id( $user ) )
+		{
+			$leads = $this->api()->get_leads( 'id', $marketo_id, $fields );
+		}
+		else
+		{
+			$leads = $this->api()->get_leads( 'email', $user->user_email, $fields );
+		}
+
+		$lead = empty( $leads ) ? NULL : $leads[0];
+
+		foreach ( $field_map as $field_name => $field_config )
+		{
+			// bypass fields that're not empty if overwrite is set to FALSE
+			if ( isset( $field_config['overwrite'] ) && FALSE === $field_config['overwrite'] )
+			{
+				if ( ! empty( $lead->$field_name ) )
+				{
+					continue;
+				}
+			}//END if
+
 			$results[ $field_name ] = go_syncuser_map()->map_field( $user, $field_config );
 		}//END foreach
 
