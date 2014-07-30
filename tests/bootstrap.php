@@ -19,6 +19,7 @@ if ( file_exists( $bootstrap ) )
 			'go-config/go-config.php',
 			'go-syncuser/go-syncuser.php',
 			'go-user-profile/go-user-profile.php',
+			'go-subscriptions/go-subscriptions.php',
 			'go-newsletter-subscriptions/go-newsletter-subscriptions.php',
 			'go-bizo/go-bizo.php',
 		),
