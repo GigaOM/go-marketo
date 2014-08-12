@@ -240,35 +240,8 @@ class GO_Marketo
 			return $results;
 		}
 
-		$fields = array();
 		foreach ( $field_map as $field_name => $field_config )
 		{
-			$fields[] = $field_name;
-		}
-
-		// get the existing lead
-		if ( $marketo_id = $this->get_marketo_id( $user ) )
-		{
-			$leads = $this->api()->get_leads( 'id', $marketo_id, $fields );
-		}
-		else
-		{
-			$leads = $this->api()->get_leads( 'email', $user->user_email, $fields );
-		}
-
-		$lead = empty( $leads ) ? NULL : $leads[0];
-
-		foreach ( $field_map as $field_name => $field_config )
-		{
-			// bypass fields that're not empty if overwrite is set to FALSE
-			if ( isset( $field_config['overwrite'] ) && FALSE === $field_config['overwrite'] )
-			{
-				if ( ! empty( $lead->$field_name ) )
-				{
-					continue;
-				}
-			}//END if
-
 			$results[ $field_name ] = go_syncuser_map()->map_field( $user, $field_config );
 		}//END foreach
 
