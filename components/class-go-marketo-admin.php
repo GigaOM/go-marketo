@@ -8,6 +8,8 @@
  */
 class GO_Marketo_Admin
 {
+	public $webhooking = FALSE; // are we handling a webhook?
+
 	private $core = NULL;
 
 	/**
@@ -36,6 +38,9 @@ class GO_Marketo_Admin
 		add_action( 'edit_user_profile', array( $this, 'show_user_profile' ) );
 
 		add_action( 'wp_ajax_go_marketo_user_sync', array( $this, 'user_sync_ajax' ) );
+
+		// TODO: placeholder for Marketo's webhook callback.
+		add_action( 'wp_ajax_go-marketo-webhook', array( $this, 'webhook_ajax' ) );
 	}//END admin_init
 
 	/**
@@ -115,4 +120,45 @@ class GO_Marketo_Admin
 		$this->display_user_profile_status_section( $user );
 		die;
 	}//END user_sync_ajax
+
+	/**
+	 * Function used to catch hooks being fired from Marketo
+	 *
+	 * https://accounts.gigaom.com/wp-admin/admin-ajax.php?action=go-marketo-webhook&marketowhs=funnybacon
+	 */
+	public function webhook_ajax()
+	{
+		$this->webhooking = TRUE;
+
+		//TODO: finialize the webhook payload/POST data. what we have so
+		// far are not final and have not been tested
+		switch ( $_POST[ 'action' ] )
+		{
+			case 'unsubscribe':
+				if ( ! empty( $_POST['wpid'] ) )
+				{
+					$user = get_user_by( 'id', absint( $_POST['wpid'] ) );
+				}
+				elseif ( ! empty( $_POST['email'] ) )
+				{
+					$user = get_user_by( 'email', sanitize_email( $_POST[ 'email' ] ) );
+				}
+
+				if ( $user )
+				{
+					// update the do_not_email user profile
+					if ( ! $this->core->do_not_email( $user->ID ) )
+					{
+						do_action( 'go_user_profile_do_not_email', $user->ID, TRUE );
+					}
+
+					//TODO: check if we need to sync to Marketo again or not
+					//$this->core->sync_user( $user, 'unsubscribe' );
+				}//END if
+				break;
+		}//END switch
+
+		$this->webhooking = FALSE;
+		die;
+	}//END webhook_ajax
 }//END class
