@@ -129,7 +129,7 @@ class GO_Marketo_Admin
 	 */
 	public function webhook_ajax()
 	{
-		if ( empty( $_POST['marketowhs'] ) || $this->core->config( 'marketowhs' ) != $_POST['marketowhs'] )
+		if ( empty( $_POST['marketowhs'] ) || $this->core->config( 'webhook_secret' ) != $_POST['marketowhs'] )
 		{
 			die;
 		}
