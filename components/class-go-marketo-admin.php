@@ -136,25 +136,24 @@ class GO_Marketo_Admin
 
 		$this->webhooking = TRUE;
 
-		switch ( $_POST[ 'event' ] )
+		// we only expect one event type currently ("unsubscribe")
+		if ( ! empty( $_POST[ 'event' ] ) && 'unsubscribe' == $_POST[ 'event' ] )
 		{
-			case 'unsubscribe':
-				if ( ! empty( $_POST['wpid'] ) )
-				{
-					$user = get_user_by( 'id', absint( $_POST['wpid'] ) );
-				}
-				elseif ( ! empty( $_POST['email'] ) )
-				{
-					$user = get_user_by( 'email', sanitize_email( $_POST[ 'email' ] ) );
-				}
+			if ( ! empty( $_POST['wpid'] ) )
+			{
+				$user = get_user_by( 'id', absint( $_POST['wpid'] ) );
+			}
+			elseif ( ! empty( $_POST['email'] ) )
+			{
+				$user = get_user_by( 'email', sanitize_email( $_POST[ 'email' ] ) );
+			}
 
-				// update the do_not_email user profile
-				if ( $user && ! $this->core->do_not_email( $user->ID ) )
-				{
-					do_action( 'go_user_profile_do_not_email', $user->ID, TRUE );
-				}
-				break;
-		}//END switch
+			// update the do_not_email user profile
+			if ( ! empty( $user ) && ! $this->core->do_not_email( $user->ID ) )
+			{
+				do_action( 'go_user_profile_do_not_email', $user->ID, TRUE );
+			}
+		}//END if
 
 		$this->webhooking = FALSE;
 		die;
