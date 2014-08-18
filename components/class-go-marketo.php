@@ -117,22 +117,39 @@ class GO_Marketo
 	}//END config
 
 	/**
-	 * hooked to the go_user_profile_do_not_email_updated action
+	 * check if the user is flagged for not being emailed
+	 *
+	 * @param $user_id ID of the user to check
+	 */
+	public function do_not_email( $user_id )
+	{
+		return apply_filters( 'go_user_profile_do_not_email_check', FALSE, $user_id );
+	}//END do_not_email
+
+	/**
+	 * hooked to the go_user_profile_do_not_email_updated action.
 	 * we set the unsubscribed flag according to $do_not_email's value
-	 * and invoke a sync
+	 * and then call subscribe() or unsubscribe().
 	 *
 	 * @param $user_id int the user id
 	 * @param $do_not_email bool value of the do_not_email user profile
 	 */
 	public function do_not_email_updated( $user_id, $do_not_email )
 	{
+		// ignore this call if we're inside a Marketo webhook else
+		// we'll get into a loopy loop
+		if ( $this->admin->webhooking )
+		{
+			return;
+		}
+
 		// we can only act if we have a valid $user_id
 		if ( 0 >= $user_id )
 		{
 			return;
 		}
 
-		$this->go_syncuser_user( $user_id, $do_not_email ? 'unsubscribe' : 'update' );
+		$this->go_syncuser_user( $user_id, ( $do_not_email ? 'unsubscribe' : 'subscribe' ) );
 	}//END do_not_email_updated
 
 	/**
@@ -178,7 +195,7 @@ class GO_Marketo
 	 *
 	 * @param WP_User $user the user who's going to be sync'ed to Marketo
 	 * @param string $action the type action triggered. we're only
-	 *  processing 'add', 'update', 'delete' and 'unsubscribe'.
+	 *  processing 'add', 'update', 'delete', 'subscribe', and 'unsubscribe'.
 	 */
 	public function sync_user( $user, $action )
 	{
@@ -195,11 +212,18 @@ class GO_Marketo
 			$lead_info['id'] = $meta['marketo_id'];
 		}
 
-		// unsubscribe the user from Marketo if this is a deletion
 		if ( 'delete' == $action || 'unsubscribe' == $action )
 		{
+			// unsubscribe the user from Marketo if this is a deletion
 			$lead_info['unsubscribed'] = TRUE;
 			$lead_info['unsubscribedReason'] = 'user unsubscribed';
+		}
+		elseif ( 'add' == $action || 'subscribe' == $action )
+		{
+			// make sure the unsubscribed flag is FALSE if this is an 'add'
+			// or 'subscribe'
+			$lead_info['unsubscribed'] = FALSE;
+			$lead_info['unsubscribedReason'] = '';
 		}
 
 		// collect all other lead info
@@ -209,7 +233,8 @@ class GO_Marketo
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
-			// do not trigger a sync when we're updating data *from* Marketo
+			// do not trigger a sync while we're updating user meta as a
+			// result of a sync
 			go_syncuser()->suspend_triggers( TRUE );
 			update_user_meta( $user->ID, $this->meta_key(), array( 'marketo_id' => $response, 'timestamp' => time() ) );
 			go_syncuser()->suspend_triggers( FALSE );
@@ -221,6 +246,10 @@ class GO_Marketo
 			{
 				$this->api()->add_lead_to_list( $the_list['id'], $response );
 			}
+
+			// and fire off of our own action to notify other plugins that
+			// we've just updated a Marketo lead. $response is the marketo id
+			do_action( 'go_marketo_post_lead_update', $user, $response );
 		}//END if
 	}//END sync_user
 
