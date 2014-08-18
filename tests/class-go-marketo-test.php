@@ -21,8 +21,20 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	public function setUp()
 	{
 		parent::setUp();
+		$this->clear_caches();
 	}//END setUp
 
+	/**
+	 * clean up our environment
+	 */
+	public function tearDown()
+	{
+		parent::tearDown();
+		$this->clear_caches();
+	}//END tearDown
+
+	/**
+	 */
 	/**
 	 * make sure we can get an instance of our plugin
 	 */
@@ -68,14 +80,6 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		$this->assertEquals( 1, count( $leads ) );
 		$this->assertEquals( $this->lead_email, $leads[0]->email );
 		$this->assertEquals( $this->lead_id, $leads[0]->id );
-		$this->assertEquals( 137141, $leads[0]->wpid );
-
-		$leads = go_marketo()->api()->get_leads( 'wpid', 137141, array( 'firstName', 'lastName', 'email', 'wpid' ) );
-
-		$this->assertEquals( 1, count( $leads ) );
-		$this->assertEquals( $this->lead_email, $leads[0]->email );
-		$this->assertEquals( $this->lead_id, $leads[0]->id );
-		$this->assertEquals( 137141, $leads[0]->wpid );
 	}//END test_get_leads
 
 	/**
@@ -145,4 +149,60 @@ class GO_Marketo_Test extends WP_UnitTestCase
 
 		$this->assertTrue( is_numeric( $response ) );
 	}//END test_add_lead_to_list
+
+	public function test_post_lead_update_action()
+	{
+		$this->clear_caches();
+		add_action( 'go_marketo_post_lead_update', array( $this, 'go_marketo_post_lead_update' ), 10, 2 );
+
+		$wp_user_id = wp_insert_user(
+			array(
+				'user_login' => 'willluotest2',
+				'user_email' => 'will.luo+test2@gigaom.com',
+				'role' => 'guest',
+			)
+		);
+
+		$user = get_user_by( 'id', $wp_user_id );
+
+		go_marketo()->sync_user( $user, 'add' );
+	}//END test_post_lead_update_action
+
+	public function go_marketo_post_lead_update( $user, $marketo_id )
+	{
+		$this->assertEquals( $this->lead_email, $user->user_email );
+		$this->assertEquals( $this->lead_id, $marketo_id );
+	}//END go_marketo_post_lead_update
+
+	/**
+	 * clear out caches so we don't leave any test artifacts behind
+	 */
+	public function clear_caches()
+	{
+		$this->flush_cache();
+
+		// clear cache if enabled
+		$save_handler = ini_get( 'session.save_handler' );
+		$save_path = ini_get( 'session.save_path' );
+
+		try
+		{
+			if ( ! $save_path )
+			{
+				$save_path = 'tcp://127.0.0.1:11211';
+			}
+
+			$memcache = new Memcache;
+
+			$save_path = str_replace( 'tcp://', '', $save_path );
+			$save_path = explode( ':', $save_path );
+
+			$memcache->connect( $save_path[0], $save_path[1] );
+			$memcache->flush();
+		}
+		catch( Exception $e )
+		{
+			var_dump( $e );
+		}//END catch
+	}//END clear_caches
 }// END class

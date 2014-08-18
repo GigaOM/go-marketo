@@ -246,6 +246,10 @@ class GO_Marketo
 			{
 				$this->api()->add_lead_to_list( $the_list['id'], $response );
 			}
+
+			// and fire off of our own action to notify other plugins that
+			// we've just updated a Marketo lead. $response is the marketo id
+			do_action( 'go_marketo_post_lead_update', $user, $response );
 		}//END if
 	}//END sync_user
 
