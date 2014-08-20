@@ -39,7 +39,6 @@ class GO_Marketo_Admin
 
 		add_action( 'wp_ajax_go_marketo_user_sync', array( $this, 'user_sync_ajax' ) );
 
-		// TODO: placeholder for Marketo's webhook callback.
 		add_action( 'wp_ajax_go-marketo-webhook', array( $this, 'webhook_ajax' ) );
 		add_action( 'wp_ajax_nopriv_go-marketo-webhook', array( $this, 'webhook_ajax' ) );
 	}//END admin_init
@@ -72,6 +71,8 @@ class GO_Marketo_Admin
 		ob_start();
 		$this->display_user_profile_status_section( $user );
 		$user_status = ob_get_clean();
+
+		$go_marketo_nonce = wp_create_nonce( 'go-marketo' );
 
 		include_once __DIR__ . '/templates/user-profile.php';
 	}//END show_user_profile
@@ -107,19 +108,30 @@ class GO_Marketo_Admin
 		// only allowed for people who can edit users
 		if ( ! current_user_can( 'edit_users' ) )
 		{
-			die;
+			apply_filters( 'go_slog', 'go-marketo', 'called by non-admin user', array( 'user' => get_current_user_id() ) );
+			wp_die();
 		}
 
-		if ( ! $user = get_userdata( wp_filter_nohtml_kses( $_REQUEST[ 'go_marketo_user_sync_user' ] ) ) )
+		if ( ! isset( $_POST['go_marketo_nonce'] ) || ! wp_verify_nonce( $_POST['go_marketo_nonce'], 'go-marketo' ) )
 		{
-			echo '<p class="error">Couldn&apos;t read user data</p>';
-			die;
+			apply_filters( 'go_slog', 'go-marketo', 'invalid nonce', array( 'user' => get_current_user_id() ) );
+			wp_die();
 		}
+
+		if ( ! $user = get_userdata( wp_filter_nohtml_kses( $_POST['go_marketo_user_sync_user'] ) ) )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user' => $_POST['go_marketo_user_sync_user'] ) );
+			wp_die();
+		}
+
+		// set go-syncuser's debug flag on temporarily (not saved to options)
+		go_syncuser()->set_debug( TRUE );
 
 		$this->core->go_syncuser_user( $user->ID, 'update' );
 
 		$this->display_user_profile_status_section( $user );
-		die;
+
+		wp_die();
 	}//END user_sync_ajax
 
 	/**
@@ -129,9 +141,15 @@ class GO_Marketo_Admin
 	 */
 	public function webhook_ajax()
 	{
+		if ( go_syncuser()->debug() )
+		{
+			apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax()' );
+		}
+
 		if ( empty( $_POST['marketowhs'] ) || $this->core->config( 'webhook_secret' ) != $_POST['marketowhs'] )
 		{
-			die;
+			apply_filters( 'go_slog', 'go-mailchimp', 'invalid webhook secret' );
+			wp_die();
 		}
 
 		$this->webhooking = TRUE;
@@ -152,10 +170,24 @@ class GO_Marketo_Admin
 			if ( ! empty( $user ) && ! $this->core->do_not_email( $user->ID ) )
 			{
 				do_action( 'go_user_profile_do_not_email', $user->ID, TRUE );
+
+				if ( go_syncuser()->debug() )
+				{
+					apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): set do_not_email flag to TRUE', array( 'user_id' => $user->ID ) );
+				}
+			}
+			elseif ( go_syncuser()->debug() )
+			{
+				apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing user wpid or email' );
 			}
 		}//END if
+		elseif ( go_syncuser()->debug() )
+		{
+			apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing or unknown "event" param', array( 'event' => $_POST['event'] ) );
+		}
 
 		$this->webhooking = FALSE;
-		die;
+
+		wp_die();
 	}//END webhook_ajax
 }//END class
