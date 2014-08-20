@@ -248,6 +248,13 @@ class GO_Marketo_API
 			return new WP_Error( 'http_error', 'Marketo API returned HTTP ' . $response['response']['code'], $response );
 		}
 
-		return json_decode( $response['body'] )->result;
+		$body = json_decode( $response['body'] );
+
+		if ( ! $body->success )
+		{
+			return new WP_Error( 'marketo_api_error', $body->errors[0]->message, $response );
+		}
+
+		return $body->result;
 	}//END marketo_rest_http
 }//END class
