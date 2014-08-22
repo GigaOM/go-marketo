@@ -19,7 +19,8 @@
 
 			var data = {
 				action: 'go_marketo_user_sync',
-				go_marketo_user_sync_user: $( '.go-marketo .user' ).val()
+				go_marketo_user_sync_user: $( '.go-marketo .user' ).val(),
+				go_marketo_nonce: $( '.go-marketo .nonce' ).val()
 			};
 
 			$.post(ajaxurl, data, function(response) {

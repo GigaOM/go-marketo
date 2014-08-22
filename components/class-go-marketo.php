@@ -166,7 +166,13 @@ class GO_Marketo
 
 		if ( empty( $user ) )
 		{
-			return; // invalid user id
+			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
+			return;
+		}
+
+		if ( go_syncuser()->debug() )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo', array( 'user_id' => $user_id, 'action' => $action ) );
 		}
 
 		$this->sync_user( $user, $action );
@@ -247,10 +253,19 @@ class GO_Marketo
 				$this->api()->add_lead_to_list( $the_list['id'], $response );
 			}
 
+			if ( go_syncuser()->debug() )
+			{
+				apply_filters( 'go_slog', 'go-marketo', 'sync_user() success', array( 'user_id' => $user->ID ) );
+			}
+
 			// and fire off of our own action to notify other plugins that
 			// we've just updated a Marketo lead. $response is the marketo id
 			do_action( 'go_marketo_post_lead_update', $user, $response );
 		}//END if
+		elseif ( go_syncuser()->debug() )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'sync_user() update_lead() returned an error', array( 'wp_error' => $response, 'user_id' => $user->ID ) );
+		}
 	}//END sync_user
 
 	/**
