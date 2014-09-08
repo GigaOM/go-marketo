@@ -149,7 +149,29 @@ class GO_Marketo
 			return;
 		}
 
-		$this->go_syncuser_user( $user_id, ( $do_not_email ? 'unsubscribe' : 'subscribe' ) );
+		$user = get_user_by( 'id', $user_id );
+
+		if ( empty( $user ) )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
+			return;
+		}
+
+		if ( go_syncuser()->debug() )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo triggered by "do_not_email" update', array( 'user_id' => $user_id, 'action' => $action ) );
+		}
+
+		// depending on the value of $do_not_email, either sync only to
+		// an existing user with the unsubscribe action, or do a general sync
+		if ( $do_not_email )
+		{
+			$this->sync_user( $user, 'unsubscribe', TRUE );
+		}
+		else
+		{
+			$this->sync_user( $user, 'subscribe' );
+		}
 	}//END do_not_email_updated
 
 	/**
@@ -167,6 +189,13 @@ class GO_Marketo
 		if ( empty( $user ) )
 		{
 			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
+			return;
+		}
+
+		// do not sync the user if do_not_email user meta is set
+		if ( $this->do_not_email( $user_id ) )
+		{
+			apply_filters( 'go_slog', 'go-marketo', 'not sync\'ing user to Marketo because "do_not_email" is set', array( 'user_id' => $user_id, 'action' => $action ) );
 			return;
 		}
 
@@ -202,8 +231,10 @@ class GO_Marketo
 	 * @param WP_User $user the user who's going to be sync'ed to Marketo
 	 * @param string $action the type action triggered. we're only
 	 *  processing 'add', 'update', 'delete', 'subscribe', and 'unsubscribe'.
+	 * @param bool $update_only if TRUE then only update an existing lead,
+	 *  else we'll create one if one doesn't already exist
 	 */
-	public function sync_user( $user, $action )
+	public function sync_user( $user, $action, $update_only = FALSE )
 	{
 		$lead_info = array(
 			'wpid' => $user->ID,
@@ -235,7 +266,7 @@ class GO_Marketo
 		// collect all other lead info
 		$lead_info = array_merge( $this->get_sync_fields( $user ), $lead_info );
 
-		$response = $this->api()->update_lead( $lead_info );
+		$response = $this->api()->create_or_update_lead( $lead_info, $update_only );
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
@@ -264,7 +295,7 @@ class GO_Marketo
 		}//END if
 		elseif ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'sync_user() update_lead() returned an error', array( 'wp_error' => $response, 'user_id' => $user->ID ) );
+			apply_filters( 'go_slog', 'go-marketo', 'sync_user() create_or_update_lead() returned an error', array( 'wp_error' => $response, 'user_id' => $user->ID ) );
 		}
 	}//END sync_user
 
