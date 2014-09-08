@@ -134,7 +134,7 @@ class GO_Marketo_API
 	public function update_lead( $lead )
 	{
 		return $this->internal_create_or_update_lead( $lead, TRUE );
-	}//END create_or_update_lead
+	}//END update_lead
 
 	/**
 	 * create or update a Marketo lead
