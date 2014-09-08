@@ -123,6 +123,34 @@ class GO_Marketo_API
 	}//END get_leads
 
 	/**
+	 * update a Marketo lead
+	 *
+	 * @param array $lead list of attributes for this lead. it must contain
+	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
+	 *  the fields are data on the lead that we want to sync to Marketo.
+	 * @return mixed the Marketo id of the updated or created lead if the
+	 *  update was successful, or WP_Error if we got an error.
+	 */
+	public function update_lead( $lead )
+	{
+		return $this->internal_create_or_update_lead( $lead, TRUE );
+	}//END create_or_update_lead
+
+	/**
+	 * create or update a Marketo lead
+	 *
+	 * @param array $lead list of attributes for this lead. it must contain
+	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
+	 *  the fields are data on the lead that we want to sync to Marketo.
+	 * @return mixed the Marketo id of the updated or created lead if the
+	 *  update was successful, or WP_Error if we got an error.
+	 */
+	public function create_or_update_lead( $lead )
+	{
+		return $this->internal_create_or_update_lead( $lead, FALSE );
+	}//END create_or_update_lead
+
+	/**
 	 * create or update a single lead. if the lead does not exist by email
 	 * or by wpid, then it will be created in Marketo.
 	 *
@@ -134,7 +162,7 @@ class GO_Marketo_API
 	 * @return mixed the Marketo id of the updated or created lead if the
 	 *  update was successful, or WP_Error if we got an error.
 	 */
-	public function create_or_update_lead( $lead, $update_only = FALSE )
+	private function internal_create_or_update_lead( $lead, $update_only )
 	{
 		if ( empty( $lead['email'] ) && empty( $lead['id'] ) )
 		{
@@ -171,7 +199,7 @@ class GO_Marketo_API
 		}
 
 		return $response[0]->id;
-	}//END create_or_update_lead
+	}//END internal_create_or_update_lead
 
 	/**
 	 * Add a lead to a list

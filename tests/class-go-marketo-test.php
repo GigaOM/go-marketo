@@ -14,8 +14,10 @@ class GO_Marketo_Test extends WP_UnitTestCase
 {
 	// these should be set to an actual lead on Marketo
 	private $user_login = 'willluo2';
-	private $lead_email = 'will.luo+test2@gigaom.com';
-	private $lead_id = 85902141;
+//	private $lead_email = 'will.luo+test2@gigaom.com';
+//	private $lead_id = 85902141;
+	private $lead_email = 'will.luo@gigaom.com';
+	private $lead_id = 26039858;
 
 	/**
 	 * set up our test environment

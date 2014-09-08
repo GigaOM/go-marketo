@@ -266,7 +266,15 @@ class GO_Marketo
 		// collect all other lead info
 		$lead_info = array_merge( $this->get_sync_fields( $user ), $lead_info );
 
-		$response = $this->api()->create_or_update_lead( $lead_info, $update_only );
+		// should we optionally create the lead?
+		if ( $update_only )
+		{
+			$response = $this->api()->update_lead( $lead_info );
+		}
+		else
+		{
+			$response = $this->api()->create_or_update_lead( $lead_info );
+		}
 
 		if ( ! is_wp_error( $response ) ) // save the Marketo id
 		{
