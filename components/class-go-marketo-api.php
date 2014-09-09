@@ -173,7 +173,7 @@ class GO_Marketo_API
 		$post_data = array(
 			'action' => $update_only ? 'updateOnly' : 'createOrUpdate',
 			'lookupField' => empty( $lead['id'] ) ? 'email' : 'id',
-			'input' => array( $lead )
+			'input' => array( $lead ),
 		);
 
 		$response = $this->marketo_rest_http(
@@ -213,7 +213,7 @@ class GO_Marketo_API
 		$url = go_marketo()->config( 'endpoint' ) . '/rest/v1/lists/' . $list_id . '/leads.json';
 
 		$input = array(
-			'input' => array()
+			'input' => array(),
 		);
 		$input['input'][] = (object) array( 'id' => $lead_id );
 
