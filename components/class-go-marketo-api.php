@@ -123,8 +123,7 @@ class GO_Marketo_API
 	}//END get_leads
 
 	/**
-	 * update a single lead. if the lead does not exist by email or
-	 * by wpid, then it will be created in Marketo.
+	 * update a Marketo lead
 	 *
 	 * @param array $lead list of attributes for this lead. it must contain
 	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
@@ -134,21 +133,53 @@ class GO_Marketo_API
 	 */
 	public function update_lead( $lead )
 	{
+		return $this->internal_create_or_update_lead( $lead, TRUE );
+	}//END update_lead
+
+	/**
+	 * create or update a Marketo lead
+	 *
+	 * @param array $lead list of attributes for this lead. it must contain
+	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
+	 *  the fields are data on the lead that we want to sync to Marketo.
+	 * @return mixed the Marketo id of the updated or created lead if the
+	 *  update was successful, or WP_Error if we got an error.
+	 */
+	public function create_or_update_lead( $lead )
+	{
+		return $this->internal_create_or_update_lead( $lead, FALSE );
+	}//END create_or_update_lead
+
+	/**
+	 * create or update a single lead. if the lead does not exist by email
+	 * or by wpid, then it will be created in Marketo.
+	 *
+	 * @param array $lead list of attributes for this lead. it must contain
+	 *  an 'email' field, and optionally an Marketo 'id' field. the rest of
+	 *  the fields are data on the lead that we want to sync to Marketo.
+	 * @param bool $update_only if TRUE then call updateOnly, else call
+	 *  createOrUpdate
+	 * @return mixed the Marketo id of the updated or created lead if the
+	 *  update was successful, or WP_Error if we got an error.
+	 */
+	private function internal_create_or_update_lead( $lead, $update_only )
+	{
 		if ( empty( $lead['email'] ) && empty( $lead['id'] ) )
 		{
 			return new WP_Error( 'missing_field', 'Missing both "email" and "id" fields' );
 		}
 
 		// build our post param
-		$post_data = new stdClass;
-		$post_data->action = 'createOrUpdate';
-		$post_data->lookupField = empty( $lead['id'] ) ? 'email' : 'id';
-		$post_data->input = array( $lead );
+		$post_data = array(
+			'action' => $update_only ? 'updateOnly' : 'createOrUpdate',
+			'lookupField' => empty( $lead['id'] ) ? 'email' : 'id',
+			'input' => array( $lead ),
+		);
 
 		$response = $this->marketo_rest_http(
 			go_marketo()->config( 'endpoint' ) . '/rest/v1/leads.json',
 			'POST',
-			$post_data
+			(object) $post_data
 		);
 
 		if ( is_wp_error( $response ) )
@@ -168,7 +199,7 @@ class GO_Marketo_API
 		}
 
 		return $response[0]->id;
-	}//END update_lead
+	}//END internal_create_or_update_lead
 
 	/**
 	 * Add a lead to a list
@@ -181,12 +212,12 @@ class GO_Marketo_API
 	{
 		$url = go_marketo()->config( 'endpoint' ) . '/rest/v1/lists/' . $list_id . '/leads.json';
 
-		$input = new stdClass();
-		$input->input = array();
-		$input->input[0] = new stdClass();
-		$input->input[0]->id = $lead_id;
+		$input = array(
+			'input' => array(),
+		);
+		$input['input'][] = (object) array( 'id' => $lead_id );
 
-		$response = $this->marketo_rest_http( $url, 'POST', $input );
+		$response = $this->marketo_rest_http( $url, 'POST', (object) $input );
 
 		if ( is_wp_error( $response ) )
 		{
@@ -248,13 +279,13 @@ class GO_Marketo_API
 			return new WP_Error( 'http_error', 'Marketo API returned HTTP ' . $response['response']['code'], $response );
 		}
 
-		$body = json_decode( $response['body'] );
+		$response_body = json_decode( $response['body'] );
 
-		if ( ! $body->success )
+		if ( ! $response_body->success )
 		{
-			return new WP_Error( 'marketo_api_error', $body->errors[0]->message, $response );
+			return new WP_Error( 'marketo_api_error', $response_body->errors[0]->message, $response );
 		}
 
-		return $body->result;
+		return $response_body->result;
 	}//END marketo_rest_http
 }//END class

@@ -12,8 +12,12 @@ require_once dirname( __DIR__ ) . '/go-marketo.php';
  */
 class GO_Marketo_Test extends WP_UnitTestCase
 {
-	private $lead_email = 'will.luo+test2@gigaom.com';
-	private $lead_id = 85902141;
+	// these should be set to an actual lead on Marketo
+	private $user_login = 'willluo2';
+//	private $lead_email = 'will.luo+test2@gigaom.com';
+//	private $lead_id = 85902141;
+	private $lead_email = 'will.luo@gigaom.com';
+	private $lead_id = 26039858;
 
 	/**
 	 * set up our test environment
@@ -85,10 +89,10 @@ class GO_Marketo_Test extends WP_UnitTestCase
 	/**
 	 * test GO_Marketo_API's update_lead() function
 	 */
-	public function test_update_lead()
+	public function test_create_or_update_lead()
 	{
 		// test the error condition
-		$result = go_marketo()->api()->update_lead( array() );
+		$result = go_marketo()->api()->create_or_update_lead( array() );
 		$this->assertTrue( is_wp_error( $result ) );
 		$this->assertEquals( 'missing_field', $result->get_error_code() );
 
@@ -102,7 +106,7 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		$this->assertEquals( $this->lead_email, $leads[0]->email );
 		$the_lead = $leads[0];
 
-		$result = go_marketo()->api()->update_lead(
+		$result = go_marketo()->api()->create_or_update_lead(
 			array(
 				'id' => $the_lead->id,
 				'email' => $this->lead_email,
@@ -121,15 +125,16 @@ class GO_Marketo_Test extends WP_UnitTestCase
 		$this->assertEquals( 'WL 2014', $leads[0]->wpname );
 
 		// empty wpname for later tests
-		$result = go_marketo()->api()->update_lead(
+		$result = go_marketo()->api()->create_or_update_lead(
 			array(
 				'id' => $the_lead->id,
 				'wpname' => '',
 			)
 		);
+
 		$this->assertFalse( is_wp_error( $result ) );
 		$this->assertEquals( $the_lead->id, $result );
-	}//END test_update_lead
+	}//END test_create_or_update_lead
 
 	public function test_add_lead_to_list()
 	{
@@ -157,13 +162,15 @@ class GO_Marketo_Test extends WP_UnitTestCase
 
 		$wp_user_id = wp_insert_user(
 			array(
-				'user_login' => 'willluotest2',
-				'user_email' => 'will.luo+test2@gigaom.com',
+				'user_login' => $this->user_login,
+				'user_email' => $this->lead_email,
 				'role' => 'guest',
 			)
 		);
 
 		$user = get_user_by( 'id', $wp_user_id );
+
+		$this->assertFalse( is_wp_error( $user ) );
 
 		go_marketo()->sync_user( $user, 'add' );
 	}//END test_post_lead_update_action

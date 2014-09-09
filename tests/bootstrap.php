@@ -22,6 +22,8 @@ if ( file_exists( $bootstrap ) )
 			'go-subscriptions/go-subscriptions.php',
 			'go-newsletter-subscriptions/go-newsletter-subscriptions.php',
 			'go-bizo/go-bizo.php',
+			'go-slog/go-slog.php',
+			'go-loggly/go-loggly.php',
 		),
 		'template' => 'vip/gigaom4-parent',
 		'stylesheet' => 'vip/gigaom4-child',
