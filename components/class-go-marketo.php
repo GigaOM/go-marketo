@@ -153,13 +153,13 @@ class GO_Marketo
 
 		if ( empty( $user ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
+			do_action( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
 			return;
 		}
 
 		if ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo triggered by "do_not_email" update', array( 'user_id' => $user_id, 'action' => $action ) );
+			do_action( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo triggered by "do_not_email" update', array( 'user_id' => $user_id, 'action' => $action ) );
 		}
 
 		// depending on the value of $do_not_email, either sync only to
@@ -188,20 +188,20 @@ class GO_Marketo
 
 		if ( empty( $user ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
+			do_action( 'go_slog', 'go-marketo', 'invalid user id', array( 'user_id' => $user_id ) );
 			return;
 		}
 
 		// do not sync the user if do_not_email user meta is set
 		if ( $this->do_not_email( $user_id ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'not sync\'ing user to Marketo because "do_not_email" is set', array( 'user_id' => $user_id, 'action' => $action ) );
+			do_action( 'go_slog', 'go-marketo', 'not sync\'ing user to Marketo because "do_not_email" is set', array( 'user_id' => $user_id, 'action' => $action ) );
 			return;
 		}
 
 		if ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo', array( 'user_id' => $user_id, 'action' => $action ) );
+			do_action( 'go_slog', 'go-marketo', 'sync\'ing user to Marketo', array( 'user_id' => $user_id, 'action' => $action ) );
 		}
 
 		$this->sync_user( $user, $action );
@@ -294,7 +294,7 @@ class GO_Marketo
 
 			if ( go_syncuser()->debug() )
 			{
-				apply_filters( 'go_slog', 'go-marketo', 'sync_user() success', array( 'user_id' => $user->ID ) );
+				do_action( 'go_slog', 'go-marketo', 'sync_user() success', array( 'user_id' => $user->ID ) );
 			}
 
 			// and fire off of our own action to notify other plugins that
@@ -303,7 +303,7 @@ class GO_Marketo
 		}//END if
 		elseif ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'sync_user() create_or_update_lead() returned an error', array( 'wp_error' => $response, 'user_id' => $user->ID ) );
+			do_action( 'go_slog', 'go-marketo', 'sync_user() create_or_update_lead() returned an error', array( 'wp_error' => $response, 'user_id' => $user->ID ) );
 		}
 	}//END sync_user
 
