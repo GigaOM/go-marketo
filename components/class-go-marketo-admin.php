@@ -108,19 +108,19 @@ class GO_Marketo_Admin
 		// only allowed for people who can edit users
 		if ( ! current_user_can( 'edit_users' ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'called by non-admin user', array( 'user' => get_current_user_id() ) );
+			do_action( 'go_slog', 'go-marketo', 'called by non-admin user', array( 'user' => get_current_user_id() ) );
 			wp_die();
 		}
 
 		if ( ! isset( $_POST['go_marketo_nonce'] ) || ! wp_verify_nonce( $_POST['go_marketo_nonce'], 'go-marketo' ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'invalid nonce', array( 'user' => get_current_user_id() ) );
+			do_action( 'go_slog', 'go-marketo', 'invalid nonce', array( 'user' => get_current_user_id() ) );
 			wp_die();
 		}
 
 		if ( ! $user = get_userdata( wp_filter_nohtml_kses( $_POST['go_marketo_user_sync_user'] ) ) )
 		{
-			apply_filters( 'go_slog', 'go-marketo', 'invalid user id', array( 'user' => $_POST['go_marketo_user_sync_user'] ) );
+			do_action( 'go_slog', 'go-marketo', 'invalid user id', array( 'user' => $_POST['go_marketo_user_sync_user'] ) );
 			wp_die();
 		}
 
@@ -143,12 +143,12 @@ class GO_Marketo_Admin
 	{
 		if ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax()' );
+			do_action( 'go_slog', 'go-mailchimp', 'webhook_ajax()' );
 		}
 
 		if ( empty( $_POST['marketowhs'] ) || $this->core->config( 'webhook_secret' ) != $_POST['marketowhs'] )
 		{
-			apply_filters( 'go_slog', 'go-mailchimp', 'invalid webhook secret' );
+			do_action( 'go_slog', 'go-mailchimp', 'invalid webhook secret' );
 			wp_die();
 		}
 
@@ -173,17 +173,17 @@ class GO_Marketo_Admin
 
 				if ( go_syncuser()->debug() )
 				{
-					apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): set do_not_email flag to TRUE', array( 'user_id' => $user->ID ) );
+					do_action( 'go_slog', 'go-mailchimp', 'webhook_ajax(): set do_not_email flag to TRUE', array( 'user_id' => $user->ID ) );
 				}
 			}
 			elseif ( go_syncuser()->debug() )
 			{
-				apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing user wpid or email' );
+				do_action( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing user wpid or email' );
 			}
 		}//END if
 		elseif ( go_syncuser()->debug() )
 		{
-			apply_filters( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing or unknown "event" param', array( 'event' => $_POST['event'] ) );
+			do_action( 'go_slog', 'go-mailchimp', 'webhook_ajax(): missing or unknown "event" param', array( 'event' => $_POST['event'] ) );
 		}
 
 		$this->webhooking = FALSE;
