@@ -25,8 +25,8 @@ if ( file_exists( $bootstrap ) )
 			'go-slog/go-slog.php',
 			'go-loggly/go-loggly.php',
 		),
-		'template' => 'vip/gigaom4-parent',
-		'stylesheet' => 'vip/gigaom4-child',
+		'template' => 'vip/gigaom5',
+		'stylesheet' => 'vip/gigaom5',
 	);
 
 	require_once $bootstrap;
