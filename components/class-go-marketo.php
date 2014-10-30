@@ -38,7 +38,7 @@ class GO_Marketo
 	{
 		if ( ! $this->config() )
 		{
-			$this->log( 'Trying to register hooks without a valid config file.', __FUNCTION__ );
+			do_action( 'go_slog', 'go-marketo', 'Trying to register hooks without a valid config file.', array( 'user' => get_current_user_id() ) );
 		}
 
 		if ( is_admin() )
